@@ -1,0 +1,9 @@
+mistralai
+faiss-cpu
+langchain
+black
+langchain_mistralai
+langchain_community
+langchain_chroma
+langchain_openai 
+bs4
