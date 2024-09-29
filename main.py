@@ -1,43 +1,63 @@
 import json
-from mistralai import Mistral
 import os
-from getpass import getpass
+from mistralai import Mistral
+from langchain_mistralai import ChatMistralAI
 from langchain_mistralai.embeddings import MistralAIEmbeddings
-from langchain_community.vectorstores import FAISS
 from langchain import hub
-
-from langchain_utils import get_chunks, get_document_splits, get_text_embedding
-from llm_utils import run_mistral
+from langchain_community.vectorstores import SKLearnVectorStore
+from langchain_core.messages import HumanMessage
+from langchain_utils import get_document_splits
+from llm_utils import format_docs
 
 with open("config.json", "r") as f:
     config = json.load(f)
 
 os.environ["LANGCHAIN_TRACING_V2"] = config["LANGCHAIN_TRACING_V2"]
 os.environ["LANGCHAIN_API_KEY"] = config["LANGCHAIN_API_KEY"]
+os.environ["MISTRAL_API_KEY"] = config["MISTRAL_API_KEY"]
+os.environ["USER_AGENT"] = config["USER_AGENT"]
+os.environ["HF_TOKEN"] = config["HF_TOKEN"]
 
 if __name__ == "__main__":
-    api_key = config["MISTRAL_API_KEY"]
-    client = Mistral(api_key=api_key)
+    try:
+        api_key = config["MISTRAL_API_KEY"]
+        client = Mistral(api_key=api_key)
+        urls = [
+            "https://pub.towardsai.net/not-rag-but-rag-fusion-understanding-next-gen-info-retrieval-477788da02e2",
+            "https://carloarg02.medium.com/my-favorite-coding-question-to-give-candidates-17ea4758880c",
+            "https://medium.com/aiguys/why-gen-ai-boom-is-fading-and-whats-next-7f1363b92696",
+            "https://towardsdatascience.com/what-nobody-tells-you-about-rags-b35f017e1570",
+            "https://medium.com/codex/ai-does-not-need-intelligence-to-become-intelligent-e317c9e1a3bb",
+        ]
+        doc_splits = get_document_splits(urls)
 
-    web_paths = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6139814/"
+        # Create embeddings
+        embeddings = MistralAIEmbeddings()
 
-    chunks = get_chunks(web_paths, 2048)
-    embeddings = [get_text_embedding(client, chunk) for chunk in chunks]
+        vectorstore = SKLearnVectorStore.from_documents(
+            documents=doc_splits,
+            embedding=embeddings,
+        )
 
-    embeddings_model = MistralAIEmbeddings(
-        model="mistral-embed", mistral_api_key=api_key
-    )
+        # Create retriever
+        retriever = vectorstore.as_retriever()
+        mistral_model = "mistral-small-latest"
+        llm = ChatMistralAI(model=mistral_model, temperature=0)
+        question = (
+            "What is the author's favourite coding question for candidate interviews?"
+        )
+        docs = retriever.get_relevant_documents(question)
+        docs_txt = format_docs(docs)
 
-    documents = get_document_splits(web_paths)
-    # Load into a vector database
-    vector = FAISS.from_documents(documents, embeddings_model)
+        with open("prompt.txt", "r") as f:
+            rag_prompt = f.read()
 
-    # Define a retriever interface
-    retriever = vector.as_retriever()
+        rag_prompt_formatted = rag_prompt.format(document=docs_txt, question=question)
+        generation = llm.invoke([HumanMessage(content=rag_prompt_formatted)])
+        print(generation)
 
-    question = (
-        "What can the standardizing of the assessment of patients with DoC assist with?"
-    )
-    prompt = hub.pull("prompt")
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        import traceback
 
-    run_mistral(client, question, prompt)
+        traceback.print_exc()

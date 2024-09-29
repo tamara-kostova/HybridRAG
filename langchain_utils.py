@@ -5,15 +5,16 @@ from mistralai import Mistral
 from langchain_core.documents import Document
 
 
-def get_document_splits(web_paths) -> List[Document]:
-    loader = WebBaseLoader(
-        web_paths=(web_paths,),
-    )
-    docs = loader.load()
+def get_document_splits(urls: List[str]) -> List[Document]:
+    docs = [WebBaseLoader(url).load() for url in urls]
+    docs_list = [item for sublist in docs for item in sublist]
 
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    splits = text_splitter.split_documents(docs)
-    return splits
+    # Split documents
+    text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        chunk_size=1000, chunk_overlap=200
+    )
+    doc_splits = text_splitter.split_documents(docs_list)
+    return doc_splits
 
 
 def get_chunks(text: str, chunk_size: int):
