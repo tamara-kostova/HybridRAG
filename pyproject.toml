@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "hybridrag"
+version = "0.1.0"
+description = "Environment for running the HybridRAG project."
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.12, <3.13"
+langchain = "^0.3.1"
+langchain-community = "^0.3.1"
+ipykernel = "^6.29.5"
+pandas = "^2.2.3"
+neo4j = "^5.25.0"
+unstructured = "^0.15.13"
+pypdf = "^5.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
