@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import requests
 from fastapi import Response
-
+import uvicorn 
 
 app = FastAPI()
 
@@ -14,7 +14,7 @@ def chat_completion(
     prompt: str 
 ):
     res = requests.post(
-        url = 'http://localhost:11434/api/generate',
+        url = 'http://localhost:11434/api/generate',    
         json =  {
             "model": "llama3:8b",
             "prompt": prompt,
@@ -23,3 +23,6 @@ def chat_completion(
     )
 
     return Response(content=res.text, media_type='application/json')
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)    
