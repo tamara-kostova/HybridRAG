@@ -44,11 +44,12 @@ async def ingest_papers(
     papers = scraper.scrape_papers(query.text, max_results=10)
     for paper in papers:
         processed_paper = document_processor.process_paper(paper)
-        db_client.insert_paper(
-            processed_paper["pmid"],
-            processed_paper["chunks"],
-            processed_paper["embeddings"],
-        )
+        if processed_paper:
+            db_client.insert_paper(
+                processed_paper["pmid"],
+                processed_paper["chunks"],
+                processed_paper["embeddings"],
+            )
     return {"message": f"Ingested {len(papers)} papers"}
 
 @router.post("/query", response_model=List[SearchResult])
