@@ -7,6 +7,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class PubMedScraper:
     def __init__(self):
         self.base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
@@ -19,7 +20,7 @@ class PubMedScraper:
                 "db": "pubmed",
                 "term": query,
                 "retmax": max_results,
-                "retmode": "json"
+                "retmode": "json",
             }
             response = requests.get(self.search_url, params=params)
             print(response)
@@ -35,22 +36,16 @@ class PubMedScraper:
 
     def fetch_paper(self, pmid) -> Dict[str, str]:
         try:
-            params = {
-                "db": "pubmed",
-                "id": pmid,
-                "retmode": "xml"
-            }
+            params = {"db": "pubmed", "id": pmid, "retmode": "xml"}
             response = requests.get(self.fetch_url, params=params)
             soup = BeautifulSoup(response.content, "lxml-xml")
-            
+
             title = soup.find("ArticleTitle").text if soup.find("ArticleTitle") else ""
-            abstract = soup.find("AbstractText").text if soup.find("AbstractText") else ""
-            
-            return {
-                "pmid": pmid,
-                "title": title,
-                "abstract": abstract
-            }
+            abstract = (
+                soup.find("AbstractText").text if soup.find("AbstractText") else ""
+            )
+
+            return {"pmid": pmid, "title": title, "abstract": abstract}
         except requests.RequestException as e:
             logger.error(f"Error fetching paper {pmid}: {e}")
             return {"pmid": pmid, "title": "", "abstract": ""}

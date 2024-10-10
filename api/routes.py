@@ -52,14 +52,22 @@ async def ingest_papers(
             )
     return {"message": f"Ingested {len(papers)} papers"}
 
+
 @router.post("/query", response_model=List[SearchResult])
-async def query_endpoint(query: Query, db_client: QdrantWrapper = Depends(get_db_client)) -> List[SearchResult]:
-    query_embedding: List[float] = processor.embed_text(query.text)
+async def query_endpoint(
+    query: Query,
+    db_client: QdrantWrapper = Depends(get_db_client),
+    document_processor: DocumentProcessor = Depends(get_document_processor),
+) -> List[SearchResult]:
+    query_embedding: List[float] = document_processor.embed_text(query.text)
     results: List[Dict[str, Any]] = db_client.search(query_embedding)
-    return [SearchResult(
-        id=result["id"],
-        score=result["score"],
-        text=result["text"],
-        paper_id=result["paper_id"],
-        chunk_index=result["chunk_index"]
-    ) for result in results]
+    return [
+        SearchResult(
+            id=result["id"],
+            score=result["score"],
+            text=result["text"],
+            paper_id=result["paper_id"],
+            chunk_index=result["chunk_index"],
+        )
+        for result in results
+    ]
