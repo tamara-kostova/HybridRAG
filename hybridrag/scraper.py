@@ -17,8 +17,8 @@ class PubMedScraper:
             "retmode": "json"
         }
         response = requests.get(self.search_url, params=params)
-        print(response)
         data = response.json()
+        print(data)
         return data["esearchresult"]["idlist"]
 
     def fetch_paper(self, pmid) -> Dict[str, str]:
@@ -45,6 +45,7 @@ class PubMedScraper:
         
         for pmid in paper_ids:
             paper = self.fetch_paper(pmid)
+            print(paper)
             papers.append(paper)
             time.sleep(1)
         

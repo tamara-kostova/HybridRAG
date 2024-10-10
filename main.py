@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
         config = json.load(f)
     app.state.scraper = PubMedScraper()
     app.state.document_processor = DocumentProcessor()
-    app.state.db_client = QdrantWrapper(host=config["QDRANT_HOST"], port=config["QDRANT_PORT"])
+    app.state.db_client = QdrantWrapper(url=config["QDRANT_HOST"], port=config["QDRANT_PORT"], api_key=config["QDRANT_API_KEY"])
     yield
 
 

@@ -4,8 +4,8 @@ from qdrant_client import QdrantClient
 from qdrant_client.http import models
 
 class QdrantWrapper:
-    def __init__(self, host: str = "localhost", port: int = 6333):
-        self.client = QdrantClient(host=host, port=port)
+    def __init__(self, url: str = "localhost", port: int = 6333, api_key:str = ""):
+        self.client = QdrantClient(url=url, port=port, api_key=api_key)
         self.collection_name = "neurology_papers"
 
     def create_collection(self, vector_size: int = 384) -> None:
@@ -36,8 +36,3 @@ class QdrantWrapper:
             limit=limit
         )
         return [{"id": hit.id, "score": hit.score, "text": hit.payload["text"]} for hit in results]
-
-# Usage example:
-# qdrant = QdrantWrapper(host="qdrant", port=6333)
-# qdrant.create_collection()
-# qdrant.insert_paper(processed_paper["pmid"], processed_paper["chunks"], processed_paper["embeddings"])
