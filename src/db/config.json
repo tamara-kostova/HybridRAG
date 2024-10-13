@@ -1,0 +1,5 @@
+{
+    "QDRANT_PORT": "6333",
+    "QDRANT_HOST": "https://7ecf0b14-c826-4ae4-b61b-3bd710fc75d9.europe-west3-0.gcp.cloud.qdrant.io",
+    "QDRANT_API_KEY": "agxIHD5sPk-2svMtUPmn26Gf3CHZLhmidbz-eOQuOjjushtYCl9aVQ"
+}
