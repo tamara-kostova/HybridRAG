@@ -47,20 +47,20 @@ class QdrantWrapper:
         except Exception as e:
             logger.error(f"Error creating collection: {e}")
 
-    def insert_paper(self, paper_id: str, chunks: List[str], embeddings) -> None:
+    def insert_paper(self, paper_name: str, chunks: List[str], embeddings) -> None:
         try:
             points = [
                 models.PointStruct(
                     id=str(uuid.uuid4()),
                     vector=embedding.tolist(),
-                    payload={"text": chunk, "paper_id": paper_id, "chunk_index": i},
+                    payload={"text": chunk, "paper_name": paper_name, "chunk_index": i},
                 )
                 for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
                 if embedding is not None
             ]
             self.client.upsert(collection_name=self.collection_name, points=points)
         except Exception as e:
-            logger.error(f"Error inserting paper {paper_id}: {e}")
+            logger.error(f"Error inserting paper {paper_name}: {e}")
 
     def search(self, query_vector: List[float], limit: int = 5):
         try:

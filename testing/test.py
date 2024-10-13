@@ -22,6 +22,26 @@ def test_ingest():
     time.sleep(5)
 
 
+def test_insert():
+    insert_url = f"{BASE_URL}/insert"
+    directory_path = r"src/graph/samplepdfs"
+
+    params = {"directory_path": directory_path}
+
+    print("Testing /Insert")
+    response = requests.post(insert_url, params=params)
+
+    if response.status_code == 200:
+        print("Insert successful:")
+        print(response.json())
+    else:
+        print(f"Insert failed with status code {response.status_code}:")
+        print(response.text)
+
+    print("\nWaiting for 5 seconds for insert to complete...\n")
+    time.sleep(5)
+
+
 def test_query():
     query_url = f"{BASE_URL}/query"
     sample_query = {"text": "What are the latest findings in Alzheimer's research?"}
@@ -43,5 +63,6 @@ def test_query():
 
 
 if __name__ == "__main__":
-    # test_ingest()
-    test_query()
+    test_ingest()
+    # test_query()
+    # test_insert()

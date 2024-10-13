@@ -6,7 +6,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 import uvicorn
 from api import routes
 
-from hybridrag.document_processor import DocumentProcessor
+from hybridrag.document_processor_ingest import DocumentProcessorIngest
 from src.db.db_client import QdrantWrapper
 from hybridrag.scraper import PubMedScraper
 
@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
     with open("src/db/config.json") as f:
         config = json.load(f)
     app.state.scraper = PubMedScraper()
-    app.state.document_processor = DocumentProcessor()
+    app.state.document_processor_ingest = DocumentProcessorIngest()
     app.state.db_client = QdrantWrapper(
         url=config["QDRANT_HOST"], api_key=config["QDRANT_API_KEY"]
     )
