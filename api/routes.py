@@ -5,11 +5,11 @@ from fastapi import APIRouter, Depends, Response
 
 import requests
 
-from api.deps import get_db_client, get_document_processor, get_document_processor_langchain, get_scraper
-from hybridrag.document_processor_langchain import DocumentProcessorLangchain
+from api.deps import get_db_client, get_document_processor_ingest, get_scraper
+from hybridrag.document_processor import DocumentProcessor
 from src.db.models.search_result import SearchResult
 from hybridrag.scraper import PubMedScraper
-from hybridrag.document_processor import DocumentProcessor
+from hybridrag.document_processor_ingest import DocumentProcessorIngest
 from src.db.db_client import QdrantWrapper
 from src.db.models.query import Query
 
@@ -41,20 +41,25 @@ async def ingest_papers(
     directory_path: str,
     db_client: QdrantWrapper = Depends(get_db_client),
 ):
-    document_processor = DocumentProcessorLangchain(db_client=db_client, directory_path=directory_path)
+    document_processor = DocumentProcessor(
+        db_client=db_client, directory_path=directory_path
+    )
     papers = document_processor.procces_directory()
     return {"message": f"Inserted {papers} papers"}
+
 
 @router.post("/ingest")
 async def ingest_papers(
     query: Query,
     scraper: PubMedScraper = Depends(get_scraper),
     db_client: QdrantWrapper = Depends(get_db_client),
-    document_processor: DocumentProcessor = Depends(get_document_processor),
+    document_processor: DocumentProcessorIngest = Depends(
+        get_document_processor_ingest
+    ),
 ):
     papers = scraper.scrape_papers(query.text, max_results=10)
     for paper in papers:
-        processed_paper = document_processor.process_paper_scraped(paper)
+        processed_paper = document_processor.process_paper(paper)
         if processed_paper:
             db_client.insert_paper(
                 processed_paper["pmid"],
@@ -68,7 +73,9 @@ async def ingest_papers(
 async def query_endpoint(
     query: Query,
     db_client: QdrantWrapper = Depends(get_db_client),
-    document_processor: DocumentProcessor = Depends(get_document_processor),
+    document_processor: DocumentProcessorIngest = Depends(
+        get_document_processor_ingest
+    ),
 ) -> List[SearchResult]:
     query_embedding: List[float] = document_processor.embed_text(query.text)
     results: List[Dict[str, Any]] = db_client.search(query_embedding)

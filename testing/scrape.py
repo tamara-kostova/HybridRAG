@@ -43,6 +43,7 @@ class PubMedScraper:
 
         return papers
 
+
 if __name__ == "__main__":
     scraper = PubMedScraper()
     papers = scraper.scrape_papers("neurology", max_results=10)
