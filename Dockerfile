@@ -1,9 +1,12 @@
-FROM python:3.9
+FROM python:3.12
+
+RUN pip install poetry
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml poetry.lock* ./
+RUN poetry config virtualenvs.create false \
+  && poetry install --no-dev --no-interaction --no-ansi
 
 WORKDIR /home/appuser
 
