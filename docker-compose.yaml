@@ -9,6 +9,7 @@ services:
       - ./app:/app
     depends_on:
       - qdrant
+    network_mode: "host"
 
   qdrant:
     image: qdrant/qdrant
@@ -18,4 +19,4 @@ services:
       - qdrant_storage:/qdrant/storage
 
 volumes:
-  qdrant_storage: 
+  qdrant_storage:
