@@ -4,6 +4,7 @@
 ## Run docker
 
 docker-compose build
+
 docker-compose up
 
 ## Tutorial for the DB
