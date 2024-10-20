@@ -1,7 +1,9 @@
 from fastapi import Request
 
 from hybridrag.document_processor_ingest import DocumentProcessorIngest
+from hybridrag.lexical_retriever import LexicalRetriever
 from hybridrag.scraper import PubMedScraper
+from hybridrag.semantic_retriever import SemanticRetriever
 from src.db.db_client import QdrantWrapper
 
 
@@ -15,3 +17,9 @@ def get_document_processor_ingest(request: Request) -> DocumentProcessorIngest:
 
 def get_scraper(request: Request) -> PubMedScraper:
     return request.app.state.scraper  # type: ignore
+
+def get_lexical_retriever(request: Request) -> LexicalRetriever:
+    return request.app.state.lexical_retriever  # type: ignore
+
+def get_semantic_retriever(request: Request) -> SemanticRetriever:
+    return request.app.state.semantic_retriever  # type: ignore

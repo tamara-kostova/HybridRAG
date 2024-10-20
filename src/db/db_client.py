@@ -74,7 +74,7 @@ class QdrantWrapper:
                     "id": hit.id,
                     "score": hit.score,
                     "text": hit.payload["text"],
-                    "paper_id": hit.payload["paper_id"],
+                    "paper_name": hit.payload["paper_name"],
                     "chunk_index": hit.payload["chunk_index"],
                 }
                 for hit in results
@@ -97,8 +97,9 @@ class QdrantWrapper:
                 documents.append(
                     {
                         "id": point.id,
-                        "paper_id": point.payload.get("paper_id"),
+                        "paper_name": point.payload.get("paper_name"),
                         "text": point.payload.get("text"),
+                        "chunk_index": point.payload.get("chunk_index"),
                     }
                 )
 

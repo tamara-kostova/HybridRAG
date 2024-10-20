@@ -7,6 +7,9 @@ import uvicorn
 from api import routes
 
 from hybridrag.document_processor_ingest import DocumentProcessorIngest
+from hybridrag.hybrid_retriever import HybridRetriever
+from hybridrag.lexical_retriever import LexicalRetriever
+from hybridrag.semantic_retriever import SemanticRetriever
 from src.db.db_client import QdrantWrapper
 from hybridrag.scraper import PubMedScraper
 
@@ -19,6 +22,12 @@ async def lifespan(app: FastAPI):
     app.state.document_processor_ingest = DocumentProcessorIngest()
     app.state.db_client = QdrantWrapper(
         url=config["QDRANT_HOST"], api_key=config["QDRANT_API_KEY"]
+    )
+    app.state.lexical_retriever = LexicalRetriever(db_client=app.state.db_client)
+    app.state.semantic_retriever = SemanticRetriever(db_client=app.state.db_client)
+    app.state.hybrid_retriever = HybridRetriever(
+        semantic_retriever=app.state.semantic_retriever,
+        lexical_retriever=app.state.lexical_retriever,
     )
     yield
 
