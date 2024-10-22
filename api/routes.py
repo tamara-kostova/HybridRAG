@@ -4,7 +4,6 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, Depends, Response
 
 import requests
-import os
 
 from api.deps import get_db_client, get_document_processor_ingest, get_scraper
 from hybridrag.document_processor import DocumentProcessor

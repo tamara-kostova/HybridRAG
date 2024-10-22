@@ -2661,7 +2661,6 @@ files = [
 wcwidth = "*"
 
 [[package]]
-<<<<<<< HEAD
 name = "propcache"
 version = "0.2.0"
 description = "Accelerated property cache"
@@ -2769,8 +2768,6 @@ files = [
 ]
 
 [[package]]
-=======
->>>>>>> e822b3a (added packages to poetry and added 'network_mode' to dockerfile (for hosting))
 name = "protobuf"
 version = "5.28.2"
 description = ""
@@ -4637,16 +4634,6 @@ socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
 zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
-name = "uuid"
-version = "1.30"
-description = "UUID object and generation functions (Python 2.3 or higher)"
-optional = false
-python-versions = "*"
-files = [
-    {file = "uuid-1.30.tar.gz", hash = "sha256:1f87cc004ac5120466f36c5beae48b4c48cc411968eed0eaecd3da82aa96193f"},
-]
-
-[[package]]
 name = "uvicorn"
 version = "0.31.1"
 description = "The lightning-fast ASGI server."
@@ -5110,8 +5097,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.12, <3.13"
-<<<<<<< HEAD
 content-hash = "895a770ae979144982ac982f1ecd29cb5046d259cea7e7b7c910055d75ca3292"
-=======
-content-hash = "4367a82008ba92b671c9b7df3f01077edde79978a54483153af5f5d57044a631"
->>>>>>> e822b3a (added packages to poetry and added 'network_mode' to dockerfile (for hosting))

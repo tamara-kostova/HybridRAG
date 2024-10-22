@@ -9,13 +9,8 @@ services:
       - ./app:/app
     depends_on:
       - qdrant
-<<<<<<< HEAD
     network_mode: "host"
 
-=======
-    network_mode: 'host'
-    
->>>>>>> e822b3a (added packages to poetry and added 'network_mode' to dockerfile (for hosting))
   qdrant:
     image: qdrant/qdrant
     ports:
@@ -24,8 +19,4 @@ services:
       - qdrant_storage:/qdrant/storage
 
 volumes:
-<<<<<<< HEAD
   qdrant_storage:
-=======
-  qdrant_storage: 
->>>>>>> e822b3a (added packages to poetry and added 'network_mode' to dockerfile (for hosting))
