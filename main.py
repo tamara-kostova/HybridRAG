@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-import json
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -13,12 +13,12 @@ from hybridrag.scraper import PubMedScraper
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    with open("src/db/config.json") as f:
-        config = json.load(f)
     app.state.scraper = PubMedScraper()
     app.state.document_processor_ingest = DocumentProcessorIngest()
+    qdrant_url = os.getenv('QDRANT_URL')
+    qdrant_api_key = os.getenv('QDRANT_API_KEY')
     app.state.db_client = QdrantWrapper(
-        url=config["QDRANT_HOST"], api_key=config["QDRANT_API_KEY"]
+        url=qdrant_url, api_key=qdrant_api_key
     )
     yield
 

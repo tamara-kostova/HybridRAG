@@ -10,7 +10,9 @@ services:
     depends_on:
       - qdrant
     network_mode: "host"
-
+    environment:
+      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
   qdrant:
     image: qdrant/qdrant
     ports:
