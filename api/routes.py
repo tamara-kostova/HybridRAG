@@ -1,17 +1,17 @@
-import os
-from platform import processor
 from typing import Any, Dict, List
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Form, Request, Response
 
 import requests
 
 from api.deps import get_db_client, get_document_processor_ingest, get_scraper
+from api.utils import format_message, get_session_history
 from hybridrag.document_processor import DocumentProcessor
 from src.db.models.search_result import SearchResult
 from hybridrag.scraper import PubMedScraper
 from hybridrag.document_processor_ingest import DocumentProcessorIngest
 from src.db.db_client import QdrantWrapper
 from src.db.models.query import Query
+from langchain_core.messages import HumanMessage, AIMessage
 
 
 router = APIRouter()
@@ -22,18 +22,32 @@ def home():
     return {"health": "healthy"}
 
 
-@router.get("/chat/v1/completions")
-def chat_completion(prompt: str) -> Response:
-    res = requests.post(
-        url="http://localhost:11434/api/generate",
-        json={
-            "model": "llama3:8b",
-            "prompt": prompt,
-            "stream": False,
-        },
-    )
-
-    return Response(content=res.text, media_type="application/json")
+@router.post("/generate")
+def chat_completion(request: Request, question: str = Form(...)) -> Response:
+    session_id = request.client.host
+    chat_history = get_session_history(session_id)
+    with open("hybridrag/instructions.txt","r") as f:
+        instructions = f.read()
+    message = format_message(instructions, question, chat_history)
+    chat_history.add_message(HumanMessage(content=question))
+    try:
+        res = requests.post(
+            url="http://localhost:11434/api/generate",
+            json={
+                "model": "llama3:8b",
+                "prompt": message,
+                "stream": False,
+            },
+        )
+        response_text = res.text
+        chat_history.add_message(AIMessage(content=response_text))
+        return Response(content=response_text, media_type="application/json")
+    except Exception as e:
+        return Response(
+            content=f'{{"message": "Failed to generate a response", "description": "{e}"}}',
+            media_type="application/json",
+            status_code=500
+        )
 
 
 @router.post("/insert")
