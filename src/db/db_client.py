@@ -8,11 +8,10 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 class QdrantWrapper:
-    def __init__(self, url: str = "localhost", api_key: str = ""):
+    def __init__(self, url: str = "localhost", api_key: str = "", timeout: float = 30.0):
         try:
-            self.client = QdrantClient(url=url, api_key=api_key)
+            self.client = QdrantClient(url=url, api_key=api_key, timeout=timeout)
             self.collection_name = "neurology_papers"
             self.create_collection()
         except Exception as e:
@@ -64,17 +63,22 @@ class QdrantWrapper:
 
     def search(self, query_vector: List[float], limit: int = 5):
         try:
+            if len(query_vector) != 384:
+                logger.error(f"Invalid query vector length: {len(query_vector)}. Expected: 384")
+                return []
+            
             results = self.client.search(
                 collection_name=self.collection_name,
                 query_vector=query_vector,
                 limit=limit,
             )
+
             return [
                 {
                     "id": hit.id,
                     "score": hit.score,
                     "text": hit.payload["text"],
-                    "paper_id": hit.payload["paper_id"],
+                    "paper_id": hit.payload.get("paper_name"),  # Change here
                     "chunk_index": hit.payload["chunk_index"],
                 }
                 for hit in results
@@ -97,7 +101,7 @@ class QdrantWrapper:
                 documents.append(
                     {
                         "id": point.id,
-                        "paper_id": point.payload.get("paper_id"),
+                        "paper_id": point.payload.get("paper_name"),  # Change here
                         "text": point.payload.get("text"),
                     }
                 )
