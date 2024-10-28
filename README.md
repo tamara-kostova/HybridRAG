@@ -15,6 +15,14 @@ sudo docker compose --env-file secrets.env build
 
 sudo docker compose --env-file secrets.env up
 
+## Swagger Docs
+
+Go to http://0.0.0.0:8000/docs
+
+## Frontend
+
+Go to http://0.0.0.0:8501
+
 ## Tutorial for the DB
 
 http://localhost:6333/dashboard#/tutorial/
