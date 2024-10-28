@@ -1,3 +1,4 @@
+import os
 from typing import Any, Dict, List
 from fastapi import APIRouter, Depends, Form, Request, Response
 
@@ -26,13 +27,14 @@ def home():
 def chat_completion(request: Request, question: str = Form(...)) -> Response:
     session_id = request.client.host
     chat_history = get_session_history(session_id)
-    with open("hybridrag/instructions.txt","r") as f:
+    with open("hybridrag/instructions.txt", "r") as f:
         instructions = f.read()
     message = format_message(instructions, question, chat_history)
     chat_history.add_message(HumanMessage(content=question))
     try:
+        llm_ip_address = os.getenv("LLM_IP_ADDRESS")
         res = requests.post(
-            url="http://localhost:11434/api/generate",
+            url=f"http://{llm_ip_address}:11434/api/generate",
             json={
                 "model": "llama3:8b",
                 "prompt": message,
@@ -46,7 +48,7 @@ def chat_completion(request: Request, question: str = Form(...)) -> Response:
         return Response(
             content=f'{{"message": "Failed to generate a response", "description": "{e}"}}',
             media_type="application/json",
-            status_code=500
+            status_code=500,
         )
 
 

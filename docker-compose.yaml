@@ -13,6 +13,7 @@ services:
     environment:
       - QDRANT_URL=${QDRANT_URL}
       - QDRANT_API_KEY=${QDRANT_API_KEY}
+      - LLM_IP_ADDRESS=${LLM_IP_ADDRESS}
   qdrant:
     image: qdrant/qdrant
     ports:
