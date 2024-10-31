@@ -1,7 +1,7 @@
 from typing import List
 from sentence_transformers import SentenceTransformer
 import logging
-
+from src.db.db_client import QdrantWrapper
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -75,3 +75,6 @@ class DocumentProcessorIngest:
         except Exception as e:
             logger.error(f"Error processing paper: {e}")
             return None
+        
+        
+
