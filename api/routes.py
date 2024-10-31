@@ -120,12 +120,10 @@ async def query_endpoint(
     document_processor: DocumentProcessorIngest = Depends(get_document_processor_ingest),
 ) -> List[SearchResult]:
     query_embedding: List[float] = document_processor.embed_text(query.text)
-
-    dense_results: List[Dict[str, Any]] = db_client.search(query_embedding, limit=10)
-
-    sparse_results: List[Dict[str, Any]] = bm25_retriever.get_relevant_documents(query.text)
-
-    combined_results = {res["id"]: res for res in dense_results + sparse_results}.values()
+    query_terms = query.text.split()  # Tokenize the query text for sparse retrieval
+    
+    # Call hybrid search
+    combined_results = db_client.hybrid_search(query_embedding, query_terms, limit=10)
 
     return [
         SearchResult(

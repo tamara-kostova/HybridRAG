@@ -1,9 +1,10 @@
-from typing import List
+from typing import List, Dict, Any
 import uuid
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from qdrant_client.http.exceptions import UnexpectedResponse
 import logging
+import numpy as np
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -12,7 +13,7 @@ class QdrantWrapper:
     def __init__(self, url: str = "localhost", api_key: str = "", timeout: float = 30.0):
         try:
             self.client = QdrantClient(url=url, api_key=api_key, timeout=timeout)
-            self.collection_name = "neurology_papers"
+            self.collection_name = "alzheimers_papers"  # Updated to use alzheimers_papers collection
             self.create_collection()
         except Exception as e:
             logger.error(f"Error initializing QdrantWrapper: {e}")
@@ -21,12 +22,8 @@ class QdrantWrapper:
     def create_collection(self, vector_size: int = 384) -> None:
         try:
             existing_collections = self.client.get_collections()
-            if self.collection_name in [
-                c.name for c in existing_collections.collections
-            ]:
-                logger.info(
-                    f"Collection {self.collection_name} already exists. Skipping creation."
-                )
+            if self.collection_name in [c.name for c in existing_collections.collections]:
+                logger.info(f"Collection {self.collection_name} already exists. Skipping creation.")
                 return
 
             self.client.create_collection(
@@ -38,38 +35,63 @@ class QdrantWrapper:
             logger.info(f"Collection {self.collection_name} created successfully.")
         except UnexpectedResponse as e:
             if "already exists" in str(e):
-                logger.info(
-                    f"Collection {self.collection_name} already exists. Skipping creation."
-                )
+                logger.info(f"Collection {self.collection_name} already exists. Skipping creation.")
             else:
                 logger.error(f"Error creating collection: {e}")
         except Exception as e:
             logger.error(f"Error creating collection: {e}")
 
-    def insert_paper(self, paper_name: str, chunks: List[str], embeddings) -> None:
+    def insert_paper(self, paper_name: str, chunks: List[str], embeddings, token_frequencies: List[Dict[str, int]]) -> None:
         try:
             points = [
                 models.PointStruct(
                     id=str(uuid.uuid4()),
                     vector=embedding.tolist(),
-                    payload={"text": chunk, "paper_name": paper_name, "chunk_index": i},
+                    payload={"text": chunk, "paper_name": paper_name, "chunk_index": i, "tf_idf": tf_idf},
                 )
-                for i, (chunk, embedding) in enumerate(zip(chunks, embeddings))
+                for i, (chunk, embedding, tf_idf) in enumerate(zip(chunks, embeddings, token_frequencies))
                 if embedding is not None
             ]
             self.client.upsert(collection_name=self.collection_name, points=points)
         except Exception as e:
             logger.error(f"Error inserting paper {paper_name}: {e}")
 
-    def search(self, query_vector: List[float], limit: int = 5):
+    def search_dense(self, query_vector: List[float], limit: int = 5) -> List[Dict[str, Any]]:
         try:
-            if len(query_vector) != 384:
-                logger.error(f"Invalid query vector length: {len(query_vector)}. Expected: 384")
-                return []
-            
             results = self.client.search(
                 collection_name=self.collection_name,
                 query_vector=query_vector,
+                limit=limit,
+            )
+            return [
+                {
+                    "id": hit.id,
+                    "score": hit.score,
+                    "text": hit.payload["text"],
+                    "paper_id": hit.payload.get("paper_name"),
+                    "chunk_index": hit.payload["chunk_index"],
+                }
+                for hit in results
+            ]
+        except Exception as e:
+            logger.error(f"Error in dense search: {e}")
+            return []
+
+    def search_sparse(self, query_terms: List[str], limit: int = 5) -> List[Dict[str, Any]]:
+        try:
+            filter_conditions = [
+                models.FieldCondition(
+                    key="tf_idf",
+                    match=models.MatchValue(value=term)
+                )
+                for term in query_terms
+            ]
+            filter_query = models.Filter(should=filter_conditions)
+
+            results = self.client.search(
+                collection_name=self.collection_name,
+                query_vector=None,
+                query_filter=filter_query,
                 limit=limit,
             )
 
@@ -78,48 +100,30 @@ class QdrantWrapper:
                     "id": hit.id,
                     "score": hit.score,
                     "text": hit.payload["text"],
-                    "paper_id": hit.payload.get("paper_name"),  # Change here
+                    "paper_id": hit.payload.get("paper_name"),
                     "chunk_index": hit.payload["chunk_index"],
                 }
                 for hit in results
             ]
         except Exception as e:
-            logger.error(f"Error searching: {e}")
+            logger.error(f"Error in sparse search: {e}")
             return []
 
-    def fetch_all_papers(self, limit: int = 100):
-        try:
-            results = self.client.scroll(
-                collection_name=self.collection_name,
-                limit=limit,
-                with_payload=True,
-                with_vectors=False,
-            )
+    def hybrid_search(self, query_vector: List[float], query_terms: List[str], limit: int = 10) -> List[Dict[str, Any]]:
+        dense_results = self.search_dense(query_vector, limit=limit)
+        sparse_results = self.search_sparse(query_terms, limit=limit)
 
-            documents = []
-            for point in results[0]:
-                documents.append(
-                    {
-                        "id": point.id,
-                        "paper_id": point.payload.get("paper_name"),  # Change here
-                        "text": point.payload.get("text"),
-                    }
-                )
+        combined_results = {}
+        
+        for result in dense_results + sparse_results:
+            doc_id = result["id"]
+            if doc_id not in combined_results:
+                combined_results[doc_id] = result
+            else:
+                combined_results[doc_id]["score"] = (
+                    combined_results[doc_id]["score"] + result["score"]
+                ) / 2
 
-            return documents
-        except Exception as e:
-            logger.error(f"Error retrieving documents: {e}")
-            return []
+        sorted_results = sorted(combined_results.values(), key=lambda x: x["score"], reverse=True)
 
-    def get_collection_info(self):
-        try:
-            info = self.client.get_collection(self.collection_name)
-            return {
-                "name": info.name,
-                "vectors_count": info.vectors_count,
-                "points_count": info.points_count,
-                "status": info.status,
-            }
-        except Exception as e:
-            logger.error(f"Error retrieving collection info: {e}")
-            return None
+        return sorted_results[:limit]

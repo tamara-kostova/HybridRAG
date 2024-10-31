@@ -1,29 +1,25 @@
 import numpy as np
 from src.db.db_client import QdrantWrapper
 
-
-# Usage
-import numpy as np
-
 # Initialize the Qdrant wrapper with your Qdrant instance URL and API key
-qdrant_client = QdrantWrapper(url="https://7ecf0b14-c826-4ae4-b61b-3bd710fc75d9.europe-west3-0.gcp.cloud.qdrant.io", 
-                               api_key="agxIHD5sPk-2svMtUPmn26Gf3CHZLhmidbz-eOQuOjjushtYCl9aVQ")
+qdrant_client = QdrantWrapper(
+    url="https://7ecf0b14-c826-4ae4-b61b-3bd710fc75d9.europe-west3-0.gcp.cloud.qdrant.io",
+    api_key="agxIHD5sPk-2svMtUPmn26Gf3CHZLhmidbz-eOQuOjjushtYCl9aVQ"
+)
 
+# Step 1: Create a dense vector for dense retrieval
+query_vector = np.random.rand(384).tolist()  # Random vector as placeholder
 
-query_vector = np.random.rand(384).tolist()
+# Step 2: Define query text for sparse retrieval
+query_text = "Neuroscience research on memory formation"  # Example query text
+query_terms = query_text.lower().split()  # Tokenize and lowercase for sparse retrieval
 
-search_results = qdrant_client.search(query_vector=query_vector, limit=13)
+# Step 3: Perform hybrid search
+search_results = qdrant_client.hybrid_search(query_vector=query_vector, query_terms=query_terms, limit=13)
 
-# Print the search results
-print("Search Results:")
-print(len(search_results))
+# Step 4: Display search results
+print("Hybrid Search Results:")
+print(f"Total Results Found: {len(search_results)}\n")
 for result in search_results:
-    print(f"ID: {result['id']}, Score: {result['score']}, Text: {result['text']}, Paper ID: {result.get('paper_id')}, Chunk Index: {result['chunk_index']}")
-
-# Step 3: Fetch all papers from the collection
-"""all_papers = qdrant_client.fetch_all_papers(limit=100)
-
-# Print all papers
-print("\nAll Papers:")
-for paper in all_papers:
-    print(f"ID: {paper['id']}, Paper ID: {paper['paper_id']}, Text: {paper['text']}")"""
+    print(f"ID: {result['id']}, Score: {result['score']:.4f}, Text: {result['text']}, "
+          f"Paper ID: {result.get('paper_id')}, Chunk Index: {result['chunk_index']}")
