@@ -2,17 +2,35 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.api
     ports:
       - "8000:8000"
     volumes:
-      - ./app:/app
+      - .:/app
     depends_on:
       - qdrant
     network_mode: "host"
     environment:
       - QDRANT_URL=${QDRANT_URL}
       - QDRANT_API_KEY=${QDRANT_API_KEY}
+      - LLM_IP_ADDRESS=${LLM_IP_ADDRESS}
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+    depends_on:
+      - app
+    network_mode: "host"
+    environment:
+      - API_URL=http://localhost:8000
+
   qdrant:
     image: qdrant/qdrant
     ports:

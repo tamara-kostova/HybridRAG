@@ -1,17 +1,21 @@
 import os
 from typing import Any, Dict, List
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Form, Request, Response
+
 import requests
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.retrievers import BM25Retriever
 
 from api.deps import get_db_client, get_document_processor_ingest, get_scraper
+from api.utils import format_message, get_session_history
 from hybridrag.document_processor import DocumentProcessor
 from src.db.models.search_result import SearchResult
 from hybridrag.scraper import PubMedScraper
 from hybridrag.document_processor_ingest import DocumentProcessorIngest
 from src.db.db_client import QdrantWrapper
 from src.db.models.query import Query
+from langchain_core.messages import HumanMessage, AIMessage
+
 
 router = APIRouter()
 
@@ -50,45 +54,33 @@ async def startup_event():
     if transformed_documents:
         bm25_retriever = BM25Retriever.from_documents(transformed_documents)  
 
-@router.get("/chat/v1/completions")
-async def chat_completion(prompt: str, db_client: QdrantWrapper = Depends(get_db_client)) -> Response:
-    query_embedding = embedding_model.embed_query(prompt)
-    dense_results = db_client.search(query_embedding, limit=10)
-
-    sparse_results = bm25_retriever.get_relevant_documents(prompt) if bm25_retriever.docs else []
-
-    combined_results = []
-
-    for res in dense_results:
-        combined_results.append({"id": res["id"], "data": res})
-
-    for res in sparse_results:
-        combined_results.append({"id": res.metadata.get('id', 'unknown'), "data": res})  
-
-    formatted_results = []
-    for item in combined_results:
-        res = item["data"]
-        if isinstance(res, Document):
-
-            formatted_results.append({"text": res.page_content, "score": res.metadata.get('score', 0)})
-        else:
-
-            formatted_results.append({"text": res.get("text", ""), "score": res.get("score", 0)})
-
-    ollama_url = "http://localhost:11434/api/generate"
-    
-
-    res = requests.post(
-        url=ollama_url,
-        json={
-            "model": "llama3:8b",
-            "prompt": prompt,
-            "stream": False,
-            "retrieved_results": formatted_results  
-        },
-    )
-
-    return Response(content=res.text, media_type="application/json")
+@router.post("/generate")
+def chat_completion(request: Request, question: str = Form(...)) -> Response:
+    session_id = request.client.host
+    chat_history = get_session_history(session_id)
+    with open("hybridrag/instructions.txt", "r") as f:
+        instructions = f.read()
+    message = format_message(instructions, question, chat_history)
+    chat_history.add_message(HumanMessage(content=question))
+    try:
+        llm_ip_address = os.getenv("LLM_IP_ADDRESS")
+        res = requests.post(
+            url=f"http://{llm_ip_address}:11434/api/generate",
+            json={
+                "model": "llama3:8b",
+                "prompt": message,
+                "stream": False,
+            },
+        )
+        response_text = res.text
+        chat_history.add_message(AIMessage(content=response_text))
+        return Response(content=response_text, media_type="application/json")
+    except Exception as e:
+        return Response(
+            content=f'{{"message": "Failed to generate a response", "description": "{e}"}}',
+            media_type="application/json",
+            status_code=500,
+        )
 
 
 @router.post("/insert")
