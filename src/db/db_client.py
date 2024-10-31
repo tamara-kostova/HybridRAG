@@ -1,10 +1,10 @@
+import numpy as np
 from typing import List, Dict, Any
 import uuid
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from qdrant_client.http.exceptions import UnexpectedResponse
 import logging
-import numpy as np
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ class QdrantWrapper:
     def __init__(self, url: str = "localhost", api_key: str = "", timeout: float = 30.0):
         try:
             self.client = QdrantClient(url=url, api_key=api_key, timeout=timeout)
-            self.collection_name = "alzheimers_papers"  # Updated to use alzheimers_papers collection
+            self.collection_name = "alzheimers_papers"
             self.create_collection()
         except Exception as e:
             logger.error(f"Error initializing QdrantWrapper: {e}")
@@ -56,6 +56,10 @@ class QdrantWrapper:
         except Exception as e:
             logger.error(f"Error inserting paper {paper_name}: {e}")
 
+    def generate_query_vector(self, text: str) -> List[float]:
+        embedding = np.random.rand(384)  
+        return embedding.tolist()
+
     def search_dense(self, query_vector: List[float], limit: int = 5) -> List[Dict[str, Any]]:
         try:
             results = self.client.search(
@@ -77,24 +81,13 @@ class QdrantWrapper:
             logger.error(f"Error in dense search: {e}")
             return []
 
-    def search_sparse(self, query_terms: List[str], limit: int = 5) -> List[Dict[str, Any]]:
+    def search_sparse(self, query_vector: List[float], limit: int = 5) -> List[Dict[str, Any]]:
         try:
-            filter_conditions = [
-                models.FieldCondition(
-                    key="tf_idf",
-                    match=models.MatchValue(value=term)
-                )
-                for term in query_terms
-            ]
-            filter_query = models.Filter(should=filter_conditions)
-
             results = self.client.search(
                 collection_name=self.collection_name,
-                query_vector=None,
-                query_filter=filter_query,
+                query_vector=query_vector,  
                 limit=limit,
             )
-
             return [
                 {
                     "id": hit.id,
@@ -109,9 +102,9 @@ class QdrantWrapper:
             logger.error(f"Error in sparse search: {e}")
             return []
 
-    def hybrid_search(self, query_vector: List[float], query_terms: List[str], limit: int = 10) -> List[Dict[str, Any]]:
+    def hybrid_search(self, query_vector: List[float], limit: int = 10) -> List[Dict[str, Any]]:
         dense_results = self.search_dense(query_vector, limit=limit)
-        sparse_results = self.search_sparse(query_terms, limit=limit)
+        sparse_results = self.search_sparse(query_vector, limit=limit)  
 
         combined_results = {}
         
