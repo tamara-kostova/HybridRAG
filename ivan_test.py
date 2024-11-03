@@ -1,5 +1,6 @@
 import numpy as np
 from src.db.db_client import QdrantWrapper
+from src.db.ollama_client import OllamaClient
 from typing import List  
 
 def get_index_for_term(term):
@@ -12,18 +13,23 @@ def get_index_for_term(term):
     }
     return term_to_index_map.get(term)
 
+def main():
+    qdrant_client = QdrantWrapper(
+        url="https://7ecf0b14-c826-4ae4-b61b-3bd710fc75d9.europe-west3-0.gcp.cloud.qdrant.io",
+        api_key="agxIHD5sPk-2svMtUPmn26Gf3CHZLhmidbz-eOQuOjjushtYCl9aVQ"
+    )
 
-qdrant_client = QdrantWrapper(
-    url="https://7ecf0b14-c826-4ae4-b61b-3bd710fc75d9.europe-west3-0.gcp.cloud.qdrant.io",
-    api_key="agxIHD5sPk-2svMtUPmn26Gf3CHZLhmidbz-eOQuOjjushtYCl9aVQ"
-)
+    ollama_client = OllamaClient()
 
-def generate_query_vector(query_text: str) -> List[float]:
-  return np.random.rand(384).tolist()  
-if __name__ == "__main__":
-    query_text = "Neuroscience research on memory formation"  
-
-    query_vector = generate_query_vector(query_text)
+    query_text = "Neuroscience research on memory formation"
+    
+    # Debugging: Check if Ollama service is reachable
+    try:
+        query_vector = ollama_client.generate_embedding(query_text)
+        print("Query vector generated successfully.")
+    except Exception as e:
+        print(f"Failed to generate query vector in main: {e}")
+        return  # Exit if embedding generation fails
 
     search_results = qdrant_client.hybrid_search(query_vector=query_vector, limit=13)
 
@@ -32,3 +38,6 @@ if __name__ == "__main__":
     for result in search_results:
         print(f"ID: {result['id']}, Score: {result['score']:.4f}, Text: {result['text']}, "
               f"Paper ID: {result.get('paper_id')}, Chunk Index: {result['chunk_index']}")
+
+if __name__ == "__main__":
+    main()

@@ -56,10 +56,6 @@ class QdrantWrapper:
         except Exception as e:
             logger.error(f"Error inserting paper {paper_name}: {e}")
 
-    def generate_query_vector(self, text: str) -> List[float]:
-        embedding = np.random.rand(384)  
-        return embedding.tolist()
-
     def search_dense(self, query_vector: List[float], limit: int = 5) -> List[Dict[str, Any]]:
         try:
             results = self.client.search(
