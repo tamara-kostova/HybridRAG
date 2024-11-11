@@ -6,9 +6,9 @@ from fastapi.middleware.gzip import GZipMiddleware
 import uvicorn
 from api import routes
 
-from hybridrag.document_processor_ingest import DocumentProcessorIngest
+from hybridrag.src.document_processors.document_processor_ingest import DocumentProcessorIngest
 from src.db.db_client import QdrantWrapper
-from hybridrag.scraper import PubMedScraper
+from hybridrag.src.document_processors.scraper import PubMedScraper
 
 
 @asynccontextmanager

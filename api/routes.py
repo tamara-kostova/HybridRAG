@@ -6,12 +6,14 @@ from fastapi import APIRouter, Depends, Response
 import requests
 
 from api.deps import get_db_client, get_document_processor_ingest, get_scraper
-from hybridrag.document_processor import DocumentProcessor
+from hybridrag.src.document_processors.document_processor import DocumentProcessor
 from src.db.models.search_result import SearchResult
-from hybridrag.scraper import PubMedScraper
-from hybridrag.document_processor_ingest import DocumentProcessorIngest
+from hybridrag.src.document_processors.scraper import PubMedScraper
+from hybridrag.src.document_processors.document_processor_ingest import DocumentProcessorIngest
 from src.db.db_client import QdrantWrapper
 from src.db.models.query import Query
+
+
 
 
 router = APIRouter()

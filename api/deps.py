@@ -1,7 +1,7 @@
 from fastapi import Request
 
-from hybridrag.document_processor_ingest import DocumentProcessorIngest
-from hybridrag.scraper import PubMedScraper
+from hybridrag.src.document_processors.document_processor_ingest import DocumentProcessorIngest
+from hybridrag.src.document_processors.scraper import PubMedScraper
 from src.db.db_client import QdrantWrapper
 
 

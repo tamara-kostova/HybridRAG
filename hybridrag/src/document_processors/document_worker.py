@@ -1,4 +1,4 @@
-from hybridrag.document_processor import DocumentProcessor
+from hybridrag.src.document_processors.document_processor import DocumentProcessor
 from src.db.db_client import QdrantWrapper
 from dotenv import load_dotenv
 import os 
