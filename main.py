@@ -6,10 +6,10 @@ from fastapi.middleware.gzip import GZipMiddleware
 import uvicorn
 from api import routes
 
-from hybridrag.document_processor_ingest import DocumentProcessorIngest
+from hybridrag.src.document_processors.document_processor_ingest import DocumentProcessorIngest
 from src.db.db_client import QdrantWrapper
-from hybridrag.scraper import PubMedScraper
-
+from hybridrag.src.document_processors.scraper import PubMedScraper
+from hybridrag.src.graph.extractor import NodeExtractor
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -20,6 +20,7 @@ async def lifespan(app: FastAPI):
     app.state.db_client = QdrantWrapper(
         url=qdrant_url, api_key=qdrant_api_key
     )
+    app.state.graph = NodeExtractor(url=os.getenv("NEO4J_URI"), username =os.getenv("NEO4J_USERNAME"), password=os.getenv("NEO4J_PASSWORD"))
     yield
 
 
