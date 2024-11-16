@@ -17,6 +17,8 @@ from src.db.retrievers.retriever_hybrid import HybridRetriever
 # Get Qdrant connection details from environment variables
 qdrant_host = os.getenv("QDRANT_HOST")
 qdrant_api_key = os.getenv("QDRANT_API_KEY")
+llm_url = "http://localhost:11434"
+model = "llama3:8b"
 
 # Initialize Qdrant client and wrapper with cloud details
 qdrant_client = QdrantClient(url=qdrant_host, api_key=qdrant_api_key)
@@ -31,7 +33,7 @@ except Exception as e:
 
 # Initialize retrievers
 try:
-    semantic_retriever = SemanticRetriever(db_client=db_client, k=5)
+    semantic_retriever = SemanticRetriever(db_client=db_client, llm_url=llm_url, model=model, k=5)
     lexical_retriever = LexicalRetriever(db_client=db_client)
 except Exception as e:
     print(f"Error initializing retrievers: {e}")
@@ -43,7 +45,9 @@ try:
         lexical_retriever=lexical_retriever,
         k=5
     )
+    
 except Exception as e:
+    print('TUKA')
     print(f"Error initializing hybrid retriever: {e}")
 
 # Perform a search query
