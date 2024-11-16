@@ -18,8 +18,8 @@ from src.db.retrievers.retriever_hybrid import HybridRetriever
 def local_llm(prompt: str) -> str:
     import requests
     response = requests.post(
-        "http://localhost:11434/api/generate",
-        json={"prompt": prompt, "model": "llama3:8b"},
+        "http://localhost:11434/api/generate",  # Replace with your local model endpoint
+        json={"prompt": prompt, "model": "llama3:8b"},  # Adjust model name if necessary
     )
     response.raise_for_status()
     return response.json()["generated_text"]
@@ -28,8 +28,6 @@ def test_hybrid_retriever():
     # Retrieve configuration from environment variables
     qdrant_host = os.getenv("QDRANT_HOST")
     qdrant_api_key = os.getenv("QDRANT_API_KEY")
-    llm_url = "http://localhost:11434"  # Local model server
-    model = "llama3:8b"
 
     # Initialize Qdrant client and wrapper
     try:
@@ -45,8 +43,8 @@ def test_hybrid_retriever():
     try:
         semantic_retriever = SemanticRetriever(
             db_client=db_client,
-            llm_url=llm_url,
-            model=model,
+            llm_url="http://localhost:11434",  # Local model server
+            model="llama3:8b",  # Local model
             k=5
         )
         print("Semantic retriever initialized successfully.")
@@ -67,8 +65,7 @@ def test_hybrid_retriever():
         hybrid_retriever = HybridRetriever(
             semantic_retriever=semantic_retriever,
             lexical_retriever=lexical_retriever,
-            llm_url=llm_url,
-            model=model,
+            local_llm_callable=local_llm,  # Pass the local LLM callable
             k=5
         )
         print("Hybrid retriever initialized successfully.")
@@ -83,6 +80,7 @@ def test_hybrid_retriever():
 
         # Print the results
         if results:
+            print("\nHybrid Retrieval Results:")
             for result in results:
                 print(f"Paper Name: {result.metadata.get('paper_name', 'Unknown')}")
                 print(f"Text: {result.page_content}")
