@@ -11,8 +11,9 @@ class SemanticRetriever:
         self.k = k
 
     def generate_embedding(self, text: str) -> List[float]:
+        # Ensure the local model endpoint is correct
         response = requests.post(
-            f"{self.llm_url}/api/generate",
+            f"{self.llm_url}/api/generate",  # Replace with your local model's API
             json={"model": self.model, "prompt": text}
         )
         response.raise_for_status()

@@ -17,26 +17,39 @@ from src.db.retrievers.retriever_hybrid import HybridRetriever
 # Get Qdrant connection details from environment variables
 qdrant_host = os.getenv("QDRANT_HOST")
 qdrant_api_key = os.getenv("QDRANT_API_KEY")
-llm_url = "http://localhost:11434"
-model = "llama3:8b"
+llm_url = "http://localhost:11434"  # Local model server
+model = "llama3:8b"  # Local model name
 
-# Initialize Qdrant client and wrapper with cloud details
-qdrant_client = QdrantClient(url=qdrant_host, api_key=qdrant_api_key)
-db_client = QdrantWrapper(url=qdrant_host, api_key=qdrant_api_key)
-
-# Debugging: Check if the API key is correct and has the necessary permissions
+# Initialize Qdrant client and wrapper
 try:
+    qdrant_client = QdrantClient(url=qdrant_host, api_key=qdrant_api_key)
+    db_client = QdrantWrapper(url=qdrant_host, api_key=qdrant_api_key)
     collections = qdrant_client.get_collections()
     print(f"Collections: {collections}")
 except Exception as e:
-    print(f"Error accessing collections: {e}")
+    print(f"Error connecting to Qdrant: {e}")
+    sys.exit(1)
 
-# Initialize retrievers
+# Initialize semantic retriever
 try:
-    semantic_retriever = SemanticRetriever(db_client=db_client, llm_url=llm_url, model=model, k=5)
-    lexical_retriever = LexicalRetriever(db_client=db_client)
+    semantic_retriever = SemanticRetriever(
+        db_client=db_client,
+        llm_url=llm_url,  # Updated for local model server
+        model=model,
+        k=5
+    )
+    print("Semantic retriever initialized successfully.")
 except Exception as e:
-    print(f"Error initializing retrievers: {e}")
+    print(f"Error initializing semantic retriever: {e}")
+    sys.exit(1)
+
+# Initialize lexical retriever
+try:
+    lexical_retriever = LexicalRetriever(db_client=db_client)
+    print("Lexical retriever initialized successfully.")
+except Exception as e:
+    print(f"Error initializing lexical retriever: {e}")
+    sys.exit(1)
 
 # Initialize hybrid retriever
 try:
@@ -45,20 +58,23 @@ try:
         lexical_retriever=lexical_retriever,
         k=5
     )
-    
+    print("Hybrid retriever initialized successfully.")
 except Exception as e:
-    print('TUKA')
     print(f"Error initializing hybrid retriever: {e}")
+    sys.exit(1)
 
 # Perform a search query
 try:
-    query = "What is alzheimers and is there any sort of connection between bananas and alzheimers?"
+    query = "What is Alzheimer's, and is there any sort of connection between bananas and Alzheimer's?"
     results = hybrid_retriever.retrieve(query)
 
     # Print the results
-    for result in results:
-        print(f"Paper ID: {result.metadata['paper_id']}")
-        print(f"Text: {result.page_content}")
-        print()
+    if results:
+        for result in results:
+            print(f"Paper Name: {result.metadata.get('paper_name', 'Unknown')}")
+            print(f"Text: {result.page_content}")
+            print("-" * 50)
+    else:
+        print("No results found.")
 except Exception as e:
     print(f"Error performing search query: {e}")
