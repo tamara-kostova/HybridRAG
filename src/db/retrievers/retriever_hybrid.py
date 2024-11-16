@@ -3,8 +3,24 @@ import nest_asyncio
 from llama_index.core.retrievers import QueryFusionRetriever
 from langchain.schema import Document
 from src.db.retrievers.retriever_lexical import LexicalRetriever
-from src.db.retrievers.retriever_semantic import SemanticRetriever
+from src.db.db_client import QdrantWrapper
+
 nest_asyncio.apply()
+
+class SemanticRetriever:
+    def __init__(self, db_client: QdrantWrapper, k: int = 5):
+        self.db_client = db_client
+        self.k = k
+
+    def retrieve(self, query: str) -> List[Document]:
+        query_embedding = self.db_client.model.encode(query)
+        results = self.db_client.search(query_vector=query_embedding, limit=self.k)
+        return [
+            Document(
+                page_content=res["text"], metadata={"paper_name": res["paper_name"]}
+            )
+            for res in results
+        ]
 
 class HybridRetriever:
     def __init__(
@@ -18,8 +34,8 @@ class HybridRetriever:
         self.k = k
         self.retriever = QueryFusionRetriever(
             [
-                self.semantic_retriever.retrieve(similarity_top_k=k),
-                self.lexical_retriever.retrieve(similarity_top_k=k),
+                self.semantic_retriever,
+                self.lexical_retriever,
             ],
             num_queries=1,
             use_async=True,

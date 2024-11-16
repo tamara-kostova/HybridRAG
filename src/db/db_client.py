@@ -13,7 +13,7 @@ class QdrantWrapper:
     def __init__(self, url: str = "localhost", api_key: str = ""):
         try:
             self.client = QdrantClient(url=url, api_key=api_key)
-            self.collection_name = "neurology_papers"
+            self.collection_name = "alzheimers_papers"
             self.create_collection()
         except Exception as e:
             logger.error(f"Error initializing QdrantWrapper: {e}")
