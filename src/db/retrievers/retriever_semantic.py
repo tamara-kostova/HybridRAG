@@ -29,10 +29,8 @@ class SemanticRetriever:
         if not all(isinstance(x, float) for x in query_embedding):
             query_embedding = [float(x) for x in query_embedding]
 
-        # Search the database with the generated query embedding
         results = self.db_client.search(query_vector=query_embedding, limit=self.k)
 
-        # Return a list of Document objects from the results
         return [
             Document(
                 page_content=res.get("text", "No text available"),
