@@ -8,7 +8,7 @@ class HybridRetriever:
         self,
         semantic_retriever: SemanticRetriever,
         lexical_retriever: LexicalRetriever,
-        k: int = 5,
+        k: int = 10,
     ):
         self.semantic_retriever = semantic_retriever
         self.lexical_retriever = lexical_retriever

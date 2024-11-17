@@ -54,7 +54,7 @@ def test_hybrid_retriever():
         hybrid_retriever = HybridRetriever(
             semantic_retriever=semantic_retriever,
             lexical_retriever=lexical_retriever,
-            k=5
+            k=10
         )
         print("Hybrid retriever initialized successfully.")
     except Exception as e:

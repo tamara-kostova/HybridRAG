@@ -4,7 +4,7 @@ from langchain.schema import Document
 from sentence_transformers import SentenceTransformer
 
 class SemanticRetriever:
-    def __init__(self, db_client: QdrantWrapper, model_name: str = "all-MiniLM-L6-v2", k: int = 5):
+    def __init__(self, db_client: QdrantWrapper, model_name: str = "all-MiniLM-L6-v2", k: int = 10):
 
         self.db_client = db_client
         self.model = SentenceTransformer(model_name)  
