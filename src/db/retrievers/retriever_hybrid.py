@@ -16,17 +16,19 @@ class HybridRetriever:
 
     def retrieve(self, query: str) -> List[Document]:
         print('Performing semantic retrieval...')
-        semantic_results = self.semantic_retriever.retrieve(query)
+        semantic_results = self.semantic_retriever.retrieve(query)[:self.k]
         print('Semantic retrieval completed.')
-        print(len(semantic_results))
-        print(semantic_results)
+        print(len(semantic_results), "results")
+
         print('Performing lexical retrieval...')
-        lexical_results = self.lexical_retriever.retrieve(query)
+        lexical_results = self.lexical_retriever.retrieve(query)[:self.k]
         print('Lexical retrieval completed.')
+        print(len(lexical_results), "results")
 
         combined_results = {
-            doc.metadata["paper_name"]: doc
+            (doc.metadata["paper_name"], doc.metadata.get("chunk_index", 0)): doc
             for doc in (semantic_results + lexical_results)
         }
 
+    
         return list(combined_results.values())
