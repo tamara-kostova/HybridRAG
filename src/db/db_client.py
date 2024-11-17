@@ -62,26 +62,32 @@ class QdrantWrapper:
         except Exception as e:
             logger.error(f"Error inserting paper {paper_name}: {e}")
 
-    def search(self, query_vector: List[float], limit: int = 5):
+    def search(self, query_vector: List[float], limit: int = 5, timeout: int = 30):
         try:
+
             results = self.client.search(
                 collection_name=self.collection_name,
                 query_vector=query_vector,
                 limit=limit,
+                timeout=timeout  
             )
-            return [
-                {
+            result_list = []
+            for hit in results:
+                result = {
                     "id": hit.id,
                     "score": hit.score,
-                    "text": hit.payload["text"],
-                    "paper_id": hit.payload["paper_id"],
-                    "chunk_index": hit.payload["chunk_index"],
+                    "text": hit.payload.get("text", "No text available"),  
+                    "paper_name": hit.payload.get("paper_name", "Unknown"),  
+                    "chunk_index": hit.payload.get("chunk_index", -1), 
                 }
-                for hit in results
-            ]
+                result_list.append(result)
+
+            return result_list
+
         except Exception as e:
             logger.error(f"Error searching: {e}")
             return []
+
 
     def fetch_all_papers(self, limit: int = 100):
         try:

@@ -18,7 +18,8 @@ class HybridRetriever:
         print('Performing semantic retrieval...')
         semantic_results = self.semantic_retriever.retrieve(query)
         print('Semantic retrieval completed.')
-
+        print(len(semantic_results))
+        print(semantic_results)
         print('Performing lexical retrieval...')
         lexical_results = self.lexical_retriever.retrieve(query)
         print('Lexical retrieval completed.')

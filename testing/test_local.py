@@ -34,10 +34,7 @@ def test_hybrid_retriever():
     # Initialize semantic retriever
     try:
         semantic_retriever = SemanticRetriever(
-            db_client=db_client,
-            llm_url=llm_url,
-            model=model,
-            k=5
+            db_client=db_client
         )
         print("Semantic retriever initialized successfully.")
     except Exception as e:
