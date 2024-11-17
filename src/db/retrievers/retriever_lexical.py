@@ -8,7 +8,6 @@ class LexicalRetriever:
         texts: List[Document] = self.fetch_texts_from_db(db_client)
         if not texts:
             raise ValueError("No documents retrieved from the database.")
-        # Initialize BM25Retriever with the documents
         self.retriever = BM25Retriever.from_documents(texts)
 
     def fetch_texts_from_db(self, db_client: QdrantWrapper) -> List[Document]:
@@ -31,6 +30,5 @@ class LexicalRetriever:
         return documents
 
     def retrieve(self, query: str, top_k: int = 10) -> List[Document]:
-        # Use the 'invoke' method instead of the deprecated 'get_relevant_documents'
         results = self.retriever.invoke(query, top_k=top_k)
         return results
