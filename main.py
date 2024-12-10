@@ -6,10 +6,10 @@ from fastapi.middleware.gzip import GZipMiddleware
 import uvicorn
 from api import routes
 
-from hybridrag.src.document_processors.document_processor_ingest import DocumentProcessorIngest
+from hybridrag.document_processors.document_processor_ingest import DocumentProcessorIngest
 from src.db.db_client import QdrantWrapper
-from hybridrag.src.document_processors.scraper import PubMedScraper
-from hybridrag.src.graph.extractor import NodeExtractor
+from hybridrag.document_processors.scraper import PubMedScraper
+from hybridrag.graph.extractor import NodeExtractor
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
