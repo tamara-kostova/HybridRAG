@@ -1,10 +1,16 @@
 import json
+import sys
 from src.db.db_client import QdrantWrapper
 
-with open("src/db/config.json") as f:
-    config = json.load(f)
+if len(sys.argv) != 3:
+    print("Usage: python script.py <QDRANT_HOST> <QDRANT_API_KEY>")
+    sys.exit(1)
+
+qdrant_host = sys.argv[1]
+qdrant_api_key = sys.argv[2]
+
 qdrant_wrapper = QdrantWrapper(
-    url=config["QDRANT_HOST"], api_key=config["QDRANT_API_KEY"]
+    url=qdrant_host, api_key=qdrant_api_key
 )
 
 # Get collection info
