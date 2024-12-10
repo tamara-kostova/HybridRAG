@@ -2,12 +2,22 @@ from typing import List
 from src.db.db_client import QdrantWrapper
 from langchain.schema import Document
 from sentence_transformers import SentenceTransformer
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 class SemanticRetriever:
-    def __init__(self, db_client: QdrantWrapper, model_name: str = "all-MiniLM-L6-v2", k: int = 10):
+    def __init__(
+        self,
+        db_client: QdrantWrapper,
+        model_name: str = "all-MiniLM-L6-v2",
+        k: int = 10,
+    ):
 
         self.db_client = db_client
-        self.model = SentenceTransformer(model_name)  
+        self.model = SentenceTransformer(model_name)
         self.k = k
 
     def generate_embedding(self, text: str) -> List[float]:
@@ -16,15 +26,12 @@ class SemanticRetriever:
             embedding = self.model.encode(text)
             return embedding
         except Exception as e:
-            print(f"Error generating embedding: {e}")
+            logger.error(f"Error generating embedding: {e}")
             return []
 
     def retrieve(self, query: str) -> List[Document]:
 
-
         query_embedding = self.generate_embedding(query)
-        
-
 
         if not all(isinstance(x, float) for x in query_embedding):
             query_embedding = [float(x) for x in query_embedding]
@@ -38,4 +45,3 @@ class SemanticRetriever:
             )
             for res in results
         ]
-

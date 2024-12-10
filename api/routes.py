@@ -5,11 +5,11 @@ from fastapi import APIRouter, Depends, Form, Request, Response
 import requests
 
 from api.deps import get_db_client, get_document_processor_ingest, get_scraper
-from hybridrag.src.document_processors.document_processor import DocumentProcessor
+from hybridrag.document_processors.document_processor import DocumentProcessor
 from api.utils import format_message, get_session_history
 from src.db.models.search_result import SearchResult
-from hybridrag.src.document_processors.scraper import PubMedScraper
-from hybridrag.src.document_processors.document_processor_ingest import DocumentProcessorIngest
+from hybridrag.document_processors.scraper import PubMedScraper
+from hybridrag.document_processors.document_processor_ingest import DocumentProcessorIngest
 from src.db.db_client import QdrantWrapper
 from src.db.models.query import Query
 from langchain_core.messages import HumanMessage, AIMessage
