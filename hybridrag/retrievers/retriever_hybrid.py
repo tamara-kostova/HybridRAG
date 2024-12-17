@@ -24,12 +24,12 @@ class HybridRetriever:
         logger.info("Performing semantic retrieval...")
         semantic_results = self.semantic_retriever.retrieve(query)[: self.k]
         logger.info("Semantic retrieval completed.")
-        logger.info(len(semantic_results), "results")
+        logger.info(f"Retrieved: {len(semantic_results)} results")
 
         logger.info("Performing lexical retrieval...")
         lexical_results = self.lexical_retriever.retrieve(query)[: self.k]
         logger.info("Lexical retrieval completed.")
-        logger.info(len(lexical_results), "results")
+        logger.info(f"Retrieved: {len(lexical_results)} results")
 
         combined_results = {
             (doc.metadata["paper_name"], doc.metadata.get("chunk_index", 0)): doc
