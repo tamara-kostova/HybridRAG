@@ -7,6 +7,11 @@ import uvicorn
 from api import routes
 
 from hybridrag.document_processors.document_processor_ingest import DocumentProcessorIngest
+from hybridrag.dspy_llm_client import configure_dspy_llama
+from hybridrag.retrievers.multihop import MultiHop
+from hybridrag.retrievers.retriever_hybrid import HybridRetriever
+from hybridrag.retrievers.retriever_lexical import LexicalRetriever
+from hybridrag.retrievers.retriever_semantic import SemanticRetriever
 from src.db.db_client import QdrantWrapper
 from hybridrag.document_processors.scraper import PubMedScraper
 from hybridrag.graph.extractor import NodeExtractor
@@ -21,6 +26,11 @@ async def lifespan(app: FastAPI):
         url=qdrant_url, api_key=qdrant_api_key
     )
     app.state.graph = NodeExtractor(url=os.getenv("NEO4J_URI"), username =os.getenv("NEO4J_USERNAME"), password=os.getenv("NEO4J_PASSWORD"))
+    app.state.lexical_retriever = LexicalRetriever(app.state.db_client)
+    app.state.semantic_retriever = SemanticRetriever(app.state.db_client)
+    app.state.hybrid_retriever = HybridRetriever(semantic_retriever=app.state.semantic_retriever, lexical_retriever=app.state.lexical_retriever)
+    app.state.dspy_llm = configure_dspy_llama()
+    app.state.multihop_retriever = MultiHop(app.state.hybrid_retriever)
     yield
 
 

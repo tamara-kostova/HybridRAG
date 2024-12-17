@@ -3,7 +3,7 @@ from langchain_ollama import ChatOllama
 from langchain_community.graphs import Neo4jGraph
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from typing import List
-from langchain.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.graphs.graph_document import Node, Relationship, GraphDocument
 import re
 from tqdm import tqdm
