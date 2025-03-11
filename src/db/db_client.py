@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 import uuid
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
@@ -13,7 +13,7 @@ class QdrantWrapper:
     def __init__(self, url: str = "localhost", api_key: str = ""):
         try:
             self.client = QdrantClient(url=url, api_key=api_key)
-            self.collection_name = "alzheimers_papers"
+            self.collection_name = "selected_alzheimers_papers"
             self.create_collection()
         except Exception as e:
             logger.error(f"Error initializing QdrantWrapper: {e}")
@@ -36,6 +36,7 @@ class QdrantWrapper:
                     size=vector_size, distance=models.Distance.COSINE
                 ),
             )
+            print(f"Collection: {self.collection_name} created")
             logger.info(f"Collection {self.collection_name} created successfully.")
         except UnexpectedResponse as e:
             if "already exists" in str(e):
@@ -64,7 +65,6 @@ class QdrantWrapper:
 
     def search(self, query_vector: List[float], limit: int = 5, timeout: int = 30):
         try:
-
             results = self.client.search(
                 collection_name=self.collection_name,
                 query_vector=query_vector,
@@ -89,6 +89,80 @@ class QdrantWrapper:
             return []
 
 
+    def fetch(self, 
+              id: Optional[uuid.UUID] = None, 
+              paper_name: Optional[str] = None, 
+              text: Optional[str] = None, 
+              limit: int = 100,
+              timeout: int = 60):
+        try:
+            scroll_filter = None
+            if id:
+                scroll_filter = models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="id",
+                            match=models.MatchValue(value=id)
+                        )
+                    ]
+                )
+            if paper_name:
+                scroll_filter = models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="paper_name",
+                            match=models.MatchValue(value=paper_name)
+                        )
+                    ]
+                )
+            if text:
+                text_condition = models.FieldCondition(
+                    key="text",
+                    match=models.MatchValue(value=text)
+                )
+                if scroll_filter:
+                    scroll_filter.must.append(text_condition)
+                else:
+                    scroll_filter = models.Filter(must=[text_condition])
+            batch_size = min(100, limit)
+            offset = None
+            documents = []
+        
+            while len(documents) < limit:
+                results = self.client.scroll(
+                    collection_name=self.collection_name,
+                    scroll_filter=scroll_filter,
+                    limit=batch_size,
+                    offset=offset,
+                    with_payload=False,
+                    with_vectors=False,
+                    timeout=timeout
+                )
+                
+                if not results[0]:
+                    break
+                    
+                for point in results[0]:
+                    documents.append({
+                        "id": point.id,
+                        "paper_name": point.payload.get("paper_name"),
+                        "text": point.payload.get("text"),
+                    })
+                    print(point)
+                    if len(documents) >= limit:
+                        break
+                
+                offset = results[1]
+                
+                if offset is None:
+                    break
+            
+                return documents
+        except Exception as e:
+            logger.error(f"Error retrieving documents: {e}")
+            return []
+
+
     def fetch_all_papers(self, limit: int = 100):
         try:
             results = self.client.scroll(
@@ -96,6 +170,7 @@ class QdrantWrapper:
                 limit=limit,
                 with_payload=True,
                 with_vectors=False,
+                offset=0,
             )
 
             documents = []
@@ -103,21 +178,61 @@ class QdrantWrapper:
                 documents.append(
                     {
                         "id": point.id,
-                        "paper_id": point.payload.get("paper_id"),
+                        "paper_name": point.payload.get("paper_name"),
                         "text": point.payload.get("text"),
                     }
                 )
-
             return documents
         except Exception as e:
             logger.error(f"Error retrieving documents: {e}")
+            return []
+        
+    def fetch_all_documents_in_batches(self, batch_size: int = 1000):
+        try:
+            all_documents = []
+            offset = None
+            
+            while True:
+                results = self.client.scroll(
+                    collection_name=self.collection_name,
+                    limit=batch_size,
+                    with_payload=True,
+                    with_vectors=False,
+                    offset=offset
+                )
+                
+                batch_documents = results[0]
+                next_offset = results[1]
+                
+                if not batch_documents:
+                    break
+                for point in batch_documents:
+                    all_documents.append({
+                        "id": point.id,
+                        "paper_name": point.payload.get("paper_name"),
+                        "paper_id": point.payload.get("paper_id", None),
+                        "text": point.payload.get("text"),
+                        "chunk_index": point.payload.get("chunk_index", -1)
+                    })
+                
+                logger.info(f"Fetched batch of {len(batch_documents)} documents. Total so far: {len(all_documents)}")
+                
+                if next_offset is None:
+                    break
+                    
+                offset = next_offset
+                
+            logger.info(f"Completed fetching all documents. Total documents: {len(all_documents)}")
+            return all_documents
+            
+        except Exception as e:
+            logger.error(f"Error in batch fetching documents: {e}")
             return []
 
     def get_collection_info(self):
         try:
             info = self.client.get_collection(self.collection_name)
             return {
-                "name": info.name,
                 "vectors_count": info.vectors_count,
                 "points_count": info.points_count,
                 "status": info.status,
@@ -125,3 +240,59 @@ class QdrantWrapper:
         except Exception as e:
             logger.error(f"Error retrieving collection info: {e}")
             return None
+
+    def delete(self,
+           id: Optional[str] = None,
+           paper_name: Optional[str] = None,
+           text: Optional[str] = None,
+           timeout: int = 120):
+        try:
+            points_filter = None
+
+            if id:
+                self.client.delete(
+                    collection_name=self.collection_name,
+                    points_selector=models.PointIdsList(
+                        points=[id]
+                    )
+                )
+                logger.info(f"Deleted document with ID: {id}")
+                return 1
+                
+            if paper_name:
+                points_filter = models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="paper_name",
+                            match=models.MatchValue(value=paper_name)
+                        )
+                    ]
+                )
+                
+            if text:
+                text_condition = models.FieldCondition(
+                    key="text",
+                    match=models.MatchValue(value=text)
+                )
+                if points_filter:
+                    points_filter.must.append(text_condition)
+                else:
+                    points_filter = models.Filter(must=[text_condition])
+            if points_filter:
+                delete_result = self.client.delete(
+                    collection_name=self.collection_name,
+                    points_selector=models.FilterSelector(
+                        filter=points_filter
+                    ),
+                    wait=True
+                )
+                deleted_count = delete_result.status.get("deleted_count", 0)
+                logger.info(f"Deleted approximately {deleted_count} document(s) matching the criteria")
+                return deleted_count
+                
+            logger.warning("No deletion criteria provided")
+            return 0
+                
+        except Exception as e:
+            logger.error(f"Error deleting documents: {e}")
+            return 0

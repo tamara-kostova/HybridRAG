@@ -1,11 +1,11 @@
 import os
 from typing import List
+from src.db.db_client import QdrantWrapper
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 import logging
-
-from src.db.db_client import QdrantWrapper
+import sys
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -52,8 +52,8 @@ class DocumentProcessor:
             if valid_chunks_and_embeddings:
                 self.db_client.insert_paper(
                     paper_name=pdf_filename,
-                    chunks=[chunk for chunk, _ in valid_chunks_and_embeddings],
-                    embeddings=[emb for _, emb in valid_chunks_and_embeddings],
+                    chunks=[chunk for chunk, emb in valid_chunks_and_embeddings],
+                    embeddings=[emb for chunk, emb in valid_chunks_and_embeddings],
                 )
                 logger.info(
                     f"Processed and inserted PDF {pdf_filename} into the database."
@@ -80,3 +80,16 @@ class DocumentProcessor:
         except Exception as e:
             logger.error(f"Error embedding text: {e}")
             return None
+        
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Usage: python -m testing.check_cluster <QDRANT_HOST> <QDRANT_API_KEY>")
+        sys.exit(1)
+
+    qdrant_host = sys.argv[1]
+    qdrant_api_key = sys.argv[2]
+    db_client = QdrantWrapper(
+        url=qdrant_host, api_key=qdrant_api_key
+    )    
+    dp = DocumentProcessor(db_client=db_client, directory_path="selected_pdfs")
+    dp.procces_directory()

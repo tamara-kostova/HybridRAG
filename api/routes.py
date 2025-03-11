@@ -52,7 +52,7 @@ def chat_completion(request: Request, question: str = Form(...)) -> Response:
 
 
 @router.post("/insert")
-async def ingest_papers(
+async def insert_papers(
     directory_path: str,
     db_client: QdrantWrapper = Depends(get_db_client),
 ):
@@ -63,7 +63,7 @@ async def ingest_papers(
     return {"message": f"Inserted {papers} papers"}
 
 
-@router.post("/ingest")
+@router.post("/old/ingest")
 async def ingest_papers(
     query: Query,
     scraper: PubMedScraper = Depends(get_scraper),

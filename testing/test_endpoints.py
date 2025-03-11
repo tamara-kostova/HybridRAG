@@ -24,7 +24,7 @@ def test_ingest():
 
 def test_insert():
     insert_url = f"{BASE_URL}/insert"
-    directory_path = r"src/graph/samplepdfs"
+    directory_path = r"selected_pdfs"
 
     params = {"directory_path": directory_path}
 
@@ -63,6 +63,4 @@ def test_query():
 
 
 if __name__ == "__main__":
-    test_ingest()
-    # test_query()
-    # test_insert()
+    test_insert()
