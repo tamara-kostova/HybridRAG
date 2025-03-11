@@ -1,9 +1,8 @@
-import json
 import sys
 from src.db.db_client import QdrantWrapper
 
 if len(sys.argv) != 3:
-    print("Usage: python script.py <QDRANT_HOST> <QDRANT_API_KEY>")
+    print("Usage: python -m testing.check_cluster <QDRANT_HOST> <QDRANT_API_KEY>")
     sys.exit(1)
 
 qdrant_host = sys.argv[1]
