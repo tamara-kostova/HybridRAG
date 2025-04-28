@@ -1,0 +1,2 @@
+Deduplicate the following cluster by deciding on a unified name, unified description, and returning a list of IDs which you decided to merge: 
+{input_cluster}

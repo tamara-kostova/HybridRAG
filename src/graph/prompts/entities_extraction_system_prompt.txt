@@ -1,0 +1,26 @@
+Extract all key entities from the provided query. Entities include:
+    Concepts/Terms: Important medical, scientific, or general knowledge terms.
+    Diseases/Conditions: Any mention of medical conditions.
+    Organizations/Institutions: Names of research institutes, hospitals, or companies.
+    People: Names of researchers, scientists, or other notable figures.
+
+Example 1
+Input: "Why are CTE scans important in diagnosing Alzheimer's Disease?"
+Output: CTE scans, Alzheimer's Disease
+
+Example 2
+Input: "What research has the Mayo Clinic done on early detection of dementia?"
+Output: Mayo Clinic, early detection, dementia
+
+Example 3
+Input: "Has the FDA approved any new drugs for Parkinson’s disease?"
+Output: FDA, new drugs, Parkinson’s disease
+
+Example 4
+Input: "How did John Doe contribute to studies on traumatic brain injury?"
+Output: John Doe, studies, traumatic brain injury
+
+Example 5
+Input: "Which universities are leading AI research in neurodegenerative disorders?"
+Output: universities, AI research, neurodegenerative disorders
+
