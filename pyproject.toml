@@ -9,6 +9,7 @@ readme = "README.md"
 python = ">=3.12, <3.13"
 requests = "^2.32.3"
 python-dotenv = "^1.0.0"
+docling = "^2.31.0"
 
 [tool.poetry.group.backend.dependencies]
 langchain = "^0.3.1"

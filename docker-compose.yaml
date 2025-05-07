@@ -11,7 +11,7 @@ services:
       - .:/app
     depends_on:
       - qdrant
-    network_mode: "host"
+    #network_mode: "host"
     environment:
       - QDRANT_URL=${QDRANT_URL}
       - QDRANT_API_KEY=${QDRANT_API_KEY}
@@ -27,7 +27,7 @@ services:
       - .:/app
     depends_on:
       - app
-    network_mode: "host"
+    #network_mode: "host"
     environment:
       - API_URL=http://localhost:8000
 

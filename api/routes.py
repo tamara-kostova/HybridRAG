@@ -35,7 +35,7 @@ def chat_completion(request: Request, question: str = Form(...)) -> Response:
         res = requests.post(
             url=f"http://{llm_ip_address}:11434/api/generate",
             json={
-                "model": "llama3:8b",
+                "model": "gemma:2b",
                 "prompt": message,
                 "stream": False,
             },

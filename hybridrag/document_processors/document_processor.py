@@ -26,15 +26,28 @@ class DocumentProcessor:
             logger.error(f"Error initializing SentenceTransformer: {e}")
             raise
 
+    
     def procces_directory(self):
-        file_paths = os.listdir(self.directory_path)
         inserted_count = 0
-        for file_path in file_paths:
-            pdf_path = os.path.join(self.directory_path, file_path)
-            if pdf_path.lower().endswith(".pdf"):
-                self.process_pdf(pdf_path)
-                inserted_count += 1
+        logger.info(f"Walking through directory: {self.directory_path}")
+
+        for root, _, files in os.walk(self.directory_path):
+            logger.info(f"In directory: {root}")
+            logger.info(f"Files found: {files}")
+
+            for file in files:
+                if file.lower().endswith(".pdf"):
+                    pdf_path = os.path.join(root, file)
+                    logger.info(f"Found PDF: {pdf_path}")
+                    try:
+                        self.process_pdf(pdf_path)
+                        inserted_count += 1
+                    except Exception as e:
+                        logger.error(f"Failed to process {pdf_path}: {e}")
+
+        logger.info(f"Total inserted: {inserted_count}")
         return inserted_count
+
 
     def process_pdf(self, pdf_path: str):
         try:
