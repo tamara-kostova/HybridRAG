@@ -5,3 +5,9 @@ beautifulsoup4
 lxml
 sentence-transformers
 qdrant-client
+mlx-vlm
+langchain
+langchain_ollama
+langchain_community
+docling
+neo4j

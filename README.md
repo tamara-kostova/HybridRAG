@@ -26,3 +26,9 @@ Go to http://0.0.0.0:8501
 ## Tutorial for the DB
 
 http://localhost:6333/dashboard#/tutorial/
+
+## Local Development
+
+uv venv .venv
+uv pip install -r requirements.txt
+python main.py
