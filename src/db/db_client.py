@@ -10,11 +10,13 @@ logger = logging.getLogger(__name__)
 
 
 class QdrantWrapper:
-    def __init__(self, url: str = "localhost", api_key: str = ""):
+    def __init__(self, url: str = "localhost", api_key: str = "", 
+                 collection_name: str = "selected_alzheimers_papers",
+                 vector_size: int = 384):
         try:
-            self.client = QdrantClient(url=url, api_key=api_key)
-            self.collection_name = "selected_alzheimers_papers"
-            self.create_collection()
+            self.client = QdrantClient(url=url)
+            self.collection_name = collection_name
+            self.create_collection(vector_size=vector_size)
         except Exception as e:
             logger.error(f"Error initializing QdrantWrapper: {e}")
             raise

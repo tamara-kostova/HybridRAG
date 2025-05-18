@@ -7,6 +7,7 @@ import requests
 from api.deps import get_db_client, get_document_processor_ingest, get_scraper
 from hybridrag.document_processors.document_processor import DocumentProcessor
 from api.utils import format_message, get_session_history
+from hybridrag.document_processors.document_processor_docling import DoclingDocumentProcessor
 from src.db.models.search_result import SearchResult
 from hybridrag.document_processors.scraper import PubMedScraper
 from hybridrag.document_processors.document_processor_ingest import DocumentProcessorIngest
@@ -61,6 +62,31 @@ async def insert_papers(
     )
     papers = document_processor.procces_directory()
     return {"message": f"Inserted {papers} papers"}
+
+@router.post("/ingest/smol")
+async def ingest_smol_papers(
+    directory_path: str,
+    collection_name: str = "docling_documents"):
+
+    db_client = QdrantWrapper(collection_name=collection_name,
+                              vector_size=384)
+    
+    # Initialize processor with your vector DB client
+    processor = DoclingDocumentProcessor(db_client=db_client, max_tokens=256, merge_peers=True)
+
+     # Process a directory of PDFs
+    docs = processor.process_directory(directory_path)
+
+    # For each document
+    for doc_name, document in docs.items():
+        # Create chunks
+        chunks = processor.create_hybrid_chunks(doc_name, document, chunk_size=256)
+        
+        # Store in vector DB
+        update_result = processor.embed_chunks(doc_name, chunks)
+        print(f"Update result for {doc_name}: {update_result}")
+
+    return {"message": f"Ingested {len(docs)} papers using smol processor"}
 
 
 @router.post("/old/ingest")
