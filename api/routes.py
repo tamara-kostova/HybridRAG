@@ -15,6 +15,10 @@ from src.db.db_client import QdrantWrapper
 from src.db.models.query import Query
 from langchain_core.messages import HumanMessage, AIMessage
 
+from hybridrag.document_processors.logging_config import setup_logging
+
+setup_logging() 
+
 router = APIRouter()
 
 
