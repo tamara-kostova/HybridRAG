@@ -175,7 +175,7 @@ class DoclingDocumentProcessor:
                         if image_pos != -1:
                             new_page_md += page_content[last_pos:image_pos + len(image_tag)] + "\n"
                             picture_description = self.call_llm_to_describe_picture(image_filename)
-                            new_page_md += f"**Picture {pic_ix} Description:**\n{picture_description}\n, Referenced as: <image src=\"{image_filename}\" />\n"
+                            new_page_md += f"<image id={pic_ix} description={picture_description} src=\"{image_filename}\" />\n"
                             last_pos = image_pos + len(image_tag)
 
                     # Add any remaining content after the last table/image
@@ -239,16 +239,41 @@ class DoclingDocumentProcessor:
         # delete the temp md file
         os.remove("./temp_md.md")
 
-        document_chunks = self.chunker.chunk(
+        document_chunks = list(self.chunker.chunk(
             docling_document, chunk_size=chunk_size, chunk_overlap=50
-        )
-
-        for chunk in document_chunks:
-            # detect if the chunk is a table
-            print("================")
-            for it in chunk.meta.doc_items:
-                print(it.label)
-            chunks.append(chunk)
+        ))
+        
+        merged_chunks = []
+        i = 0
+        n = len(document_chunks)
+        while i < n:
+            chunk = document_chunks[i]
+            # If this chunk is text
+            if any(it.label == DocItemLabel.TEXT for it in chunk.meta.doc_items):
+                # Start a new group
+                combined_chunks = [chunk]
+                j = i + 1
+                # Collect following table chunks
+                while j < n and any(it.label == DocItemLabel.TABLE for it in document_chunks[j].meta.doc_items):
+                    combined_chunks.append(document_chunks[j])
+                    j += 1
+                # If we collected any table chunks, also try to append the next text chunk
+                if len(combined_chunks) > 1:
+                    if j < n and any(it.label == DocItemLabel.TEXT for it in document_chunks[j].meta.doc_items):
+                        combined_chunks.append(document_chunks[j])
+                        j += 1
+                # Merge all collected chunks into one (by concatenating their text and merging meta)
+                merged_text = "\n\n".join(getattr(c, 'text', str(c)) for c in combined_chunks)
+                # For meta, just use the meta of the first chunk for now
+                merged_chunk = combined_chunks[0]
+                merged_chunk.text = merged_text
+                merged_chunks.append(merged_chunk)
+                i = j
+            else:
+                # If not a text chunk, just append as is
+                merged_chunks.append(chunk)
+                i += 1
+        chunks = merged_chunks
 
         logger.info(f"Created {len(chunks)} chunks for document: {doc_name}")
         logger.info(f"Total chunks created: {len(chunks)}")
@@ -268,7 +293,20 @@ class DoclingDocumentProcessor:
             embeddings = []
             chunks_embeddings = []
             for chunk in chunks:
+                # extract image reference from chunk text
+                image_ref = re.search(r'<image id=(\d+) description="([^"]+)" src="([^"]+)" />', chunk.text)
+                if image_ref:
+                    image_id = image_ref.group(1)
+                    image_description = image_ref.group(2)
+                    image_src = image_ref.group(3)
+                    logger.info(f"Image reference found: ID={image_id}, Description={image_description}, Source={image_src}")
+
                 text_to_embed = self.chunker.contextualize(chunk=chunk)
+
+                # if image_ref is not None, add the image description to the text_to_embed
+                if image_ref:
+                    text_to_embed += f"\n\nImage Description: {image_description}"
+
                 embedding = self.embed_text(text_to_embed)
                 chunks_embeddings.append(text_to_embed)
 
