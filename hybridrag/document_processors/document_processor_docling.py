@@ -1,9 +1,11 @@
 import logging
+import os
+import re
 import time
-import pandas as pd
 from pathlib import Path
 from typing import Dict, List
-import os
+
+import pandas as pd
 from docling.chunking import HybridChunker
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.document import ConversionResult
@@ -14,11 +16,9 @@ from docling.datamodel.pipeline_options import (
     VlmPipelineOptions,
     smoldocling_vlm_mlx_conversion_options,
 )
-from docling_core.types.doc import ImageRefMode, PictureItem, TableItem
-
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.pipeline.vlm_pipeline import VlmPipeline
-from docling_core.types.doc import DoclingDocument
+from docling_core.types.doc import DoclingDocument, ImageRefMode, PictureItem, TableItem
 from docling_core.types.doc.document import DocTagsDocument
 from docling_core.types.doc.labels import DocItemLabel
 from sentence_transformers import SentenceTransformer
@@ -131,44 +131,60 @@ class DoclingDocumentProcessor:
                         doctags_page, document_name=f"Document_{i}"
                     )
 
-                    logger.info("tables in page: " + str(markdown_document_page.tables))
+                    # Get the full markdown for the page
                     page_md = f"Page Number: {i}\n"
-                    page_md += markdown_document_page.export_to_markdown(image_placeholder = "", image_mode=ImageRefMode.REFERENCED) + "\n"
+                    page_content = markdown_document_page.export_to_markdown(image_mode=ImageRefMode.REFERENCED)
 
-                    # Tables
+                    # We'll build a new markdown string with summaries/descriptions inserted
+                    new_page_md = ""
+                    last_pos = 0
+
+                    # Insert table summaries
                     for table_ix, table in enumerate(markdown_document_page.tables):
-                        table_df: pd.DataFrame = table.export_to_dataframe()
-                        logger.info(f"Table {table_ix}:")
-                        logger.info(table_df)
-                        logger.info("================")
-                        # Generate summary with LLM
-                        table_summary = self.call_llm_to_summarize_table(table_df)
-                        page_md += f"\n**Table {table_ix} Summary:**\n{table_summary}\n"
+                        table_md = table.export_to_markdown()
+                        table_pos = page_content.find(table_md, last_pos)
+                        if table_pos != -1:
+                            # Add content up to and including the table
+                            new_page_md += page_content[last_pos:table_pos + len(table_md)] + "\n"
+                            # Add summary
+                            table_df: pd.DataFrame = table.export_to_dataframe()
+                            table_summary = self.call_llm_to_summarize_table(table_df)
+                            new_page_md += f"**Table {table_ix} Summary:**\n{table_summary}\n"
+                            last_pos = table_pos + len(table_md)
 
-                    images_filenames = []
+                    # Insert image descriptions
+
+                    images_list = []
                     for pic_ix, picture in enumerate(markdown_document_page.pictures):
                         image = picture.get_image(markdown_document_page)
-                        # Skip images with very small resolution
-                        if image.width < 30 or image.height < 30:
-                            logger.info(f"Skipping image {pic_ix} on page {i} due to small size: {image.width}x{image.height}")
-                            continue
                         output_dir = Path("scratch")
                         output_dir.mkdir(parents=True, exist_ok=True)
                         image_filename = output_dir / f"{pdf_file.stem}-page{i}-picture{pic_ix}.png"
+                        image_md = f'![Picture {pic_ix}](./{image_filename})'
+                        image_tag = "<!-- image -->"
+                        image_pos = page_content.find(image_tag, last_pos)
+                        if image.width < 30 or image.height < 30:
+                            logger.info(f"Skipping image {pic_ix} on page {i} due to small size: {image.width}x{image.height}")
+                            # Skip and remove the <!-- image --> tag
+                            if image_pos != -1:
+                                new_page_md += page_content[last_pos:image_pos]
+                                last_pos = image_pos + len(image_tag)
+                            continue
                         image.save(image_filename, format="PNG")
-                        images_filenames.append(image_filename)
-                        # Generate description with LLM
-                        picture_description = self.call_llm_to_describe_picture(image_filename)
-                        page_md += f"\n**Picture {pic_ix} Description:**\n{picture_description}\n, Referenced as: <image src=\"{image_filename}\" />.\n"
+                        images_list.append(image_filename)
+                        if image_pos != -1:
+                            new_page_md += page_content[last_pos:image_pos + len(image_tag)] + "\n"
+                            picture_description = self.call_llm_to_describe_picture(image_filename)
+                            new_page_md += f"**Picture {pic_ix} Description:**\n{picture_description}\n, Referenced as: <image src=\"{image_filename}\" />\n"
+                            last_pos = image_pos + len(image_tag)
 
-                    doc_pages.append(page_md)
+                    # Add any remaining content after the last table/image
+                    new_page_md += page_content[last_pos:]
 
-                # # Process images and tables
-                # result = self.converter.convert(str(pdf_file))
+                    # Clean up multiple consecutive newlines
+                    new_page_md = re.sub(r'\n{3,}', '\n\n', new_page_md)
 
-                # # save to txt file (string representation)
-                # with open("./temp_new.txt", "w") as f:
-                #     f.write(str(result.document))
+                    doc_pages.append(new_page_md)
 
                 processed_docs[pdf_file.name] = "".join(doc_pages)
 
